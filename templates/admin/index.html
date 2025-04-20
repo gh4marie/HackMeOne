@@ -1,0 +1,13 @@
+{# templates/admin/index.html #}
+{% extends "admin/index.html" %}
+
+{% block content %}
+    {{ block.super }}
+    <div style="margin-top: 2rem;">
+        <h2>Дополнительные инструменты</h2>
+        <ul>
+            <li><a href="{{ analytics_url }}">Перейти к аналитике</a></li>
+            <li><a href="{{ upload_logs_url }}">Загрузить логи</a></li>
+        </ul>
+    </div>
+{% endblock %}

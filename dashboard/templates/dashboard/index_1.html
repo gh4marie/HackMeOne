@@ -1,0 +1,379 @@
+{% load static %}
+<!doctype html>
+<html lang="ru">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Дашборд - Ростелеком</title>
+        <!-- Подключаем Bootstrap 5 CSS -->
+        <link
+            href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+            rel="stylesheet"
+        />
+        <!-- Подключаем Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <!-- Пользовательские стили -->
+        <style>
+            body {
+                overflow-x: hidden;
+                background-color: #f1f4f9;
+                font-family: Arial, sans-serif;
+            }
+            /* Стили для бокового меню */
+            .sidebar {
+                position: fixed;
+                top: 0;
+                left: 0;
+                height: 100vh;
+                width: 260px;
+                background-color: #343a40;
+                padding-top: 30px;
+                box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+                z-index: 600;
+            }
+            .sidebar .brand {
+                font-size: 1.8rem;
+                text-align: center;
+                margin-bottom: 2rem;
+                font-weight: bold;
+                color: #fff;
+            }
+            .sidebar .nav {
+                list-style: none;
+                padding: 0;
+            }
+            .sidebar .nav-item {
+                margin-bottom: 10px;
+            }
+            .sidebar .nav-link {
+                display: block;
+                color: #adb5bd;
+                padding: 10px 20px;
+                text-decoration: none;
+                font-size: 1.1rem;
+                transition:
+                    background-color 0.3s,
+                    color 0.3s;
+                cursor: pointer;
+            }
+            .sidebar .nav-link:hover,
+            .sidebar .nav-link.active {
+                background-color: #495057;
+                color: #fff;
+                border-radius: 4px;
+            }
+            /* Основной контент с отступом от сайдбара */
+            .content {
+                margin-left: 260px;
+                padding: 20px 30px;
+            }
+            /* Верхняя навигация */
+            .topnav {
+                background-color: #fff;
+                border-bottom: 1px solid #dee2e6;
+                padding: 10px 20px;
+                margin-bottom: 20px;
+            }
+            .topnav .navbar-brand {
+                font-weight: bold;
+                font-size: 1.5rem;
+                color: #333;
+            }
+            /* Карточки статистики */
+            .card {
+                border: none;
+                border-radius: 10px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            }
+            .card-body {
+                padding: 1.5rem;
+            }
+            .card .card-title {
+                font-size: 1.1rem;
+                margin-bottom: 0.5rem;
+            }
+            .card .display-6 {
+                font-size: 2rem;
+                font-weight: bold;
+            }
+            /* График */
+            .chart-card {
+                border: none;
+                border-radius: 10px;
+                box-shadow: 0 2px 5px rgba(0, 0, 0, 0.08);
+            }
+            .chart-card .card-header {
+                background-color: #fff;
+                border-bottom: 1px solid #dee2e6;
+                font-weight: bold;
+                font-size: 1.1rem;
+            }
+            /* Стили панели фильтров */
+            .filter-panel {
+                background-color: #2b2f3a;
+                padding: 20px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                color: #fff;
+            }
+            .filter-panel label {
+                font-weight: bold;
+            }
+            .filter-panel input,
+            .filter-panel select {
+                background-color: #3a3f50;
+                border: 1px solid #495057;
+                color: #fff;
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Боковая панель -->
+        <nav class="sidebar">
+            <div class="brand">
+                <img
+                    src="{% static 'images/rostelecom_logo_colors.png' %}"
+                    alt="Логотип Ростелеком"
+                    style="height: 40px; vertical-align: middle"
+                />
+                <span style="margin-left: 10px">Ростелеком</span>
+            </div>
+            <ul class="nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Дашборд</a>
+                </li>
+                <!-- При клике на Аналитику открывается фильтр через collapse -->
+                <li class="nav-item">
+                    <a
+                        class="nav-link"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#filterPanel"
+                        aria-expanded="false"
+                        aria-controls="filterPanel"
+                        >Аналитика</a
+                    >
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Экспорт</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard/upload-log"
+                        >Загрузить файл</a
+                    >
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Основной контент -->
+        <div class="content">
+            <!-- Верхняя навигация -->
+            <nav class="topnav navbar navbar-expand-lg navbar-light">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="#">Дашборд логов</a>
+                    <button
+                        class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#topNavContent"
+                    >
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="topNavContent">
+                        <form class="d-flex ms-auto">
+                            <input
+                                class="form-control me-2"
+                                type="search"
+                                placeholder="Поиск"
+                                aria-label="Search"
+                            />
+                            <button
+                                class="btn btn-outline-primary"
+                                type="submit"
+                            >
+                                Поиск
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Панель фильтров (скрыта по умолчанию) -->
+            <div class="collapse" id="filterPanel">
+              <div class="filter-panel">
+                <h5>Фильтры аналитики</h5>
+                <form id="filterForm" method="get" action="{% url 'panel' %}">
+
+                  <!-- Дата -->
+                  <div class="mb-3">
+                    <label for="start_date" class="form-label">Дата с:</label>
+                    <input type="date" id="start_date" name="start_date" class="form-control">
+                  </div>
+                  <div class="mb-3">
+                    <label for="end_date" class="form-label">Дата до:</label>
+                    <input type="date" id="end_date" name="end_date" class="form-control">
+                  </div>
+
+                  <!-- Статус запроса -->
+                  <div class="mb-3">
+                    <label class="form-label">Код статуса:</label>
+                    <div class="d-flex flex-wrap">
+                        <div class="form-check me-3">
+                          <input class="form-check-input" type="checkbox" id="status100" name="status" value="100">
+                          <label class="form-check-label" for="status100">1**</label>
+                        </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="status200" name="status" value="200">
+                        <label class="form-check-label" for="status200">2**</label>
+                      </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="status300" name="status" value="300">
+                        <label class="form-check-label" for="status300">3**</label>
+                      </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="status404" name="status" value="404">
+                        <label class="form-check-label" for="status404">4**</label>
+                      </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="status500" name="status" value="500">
+                        <label class="form-check-label" for="status500">5**</label>
+                      </div>
+                      <!-- при необходимости добавьте другие коды -->
+                    </div>
+                  </div>
+
+                  <!-- HTTP‑метод -->
+                  <div class="mb-3">
+                    <label class="form-label">Метод HTTP:</label>
+                    <div class="d-flex flex-wrap">
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="methodGET" name="http_method" value="GET">
+                        <label class="form-check-label" for="methodGET">GET</label>
+                      </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="methodPOST" name="http_method" value="POST">
+                        <label class="form-check-label" for="methodPOST">POST</label>
+                      </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="methodPUT" name="http_method" value="PUT">
+                        <label class="form-check-label" for="methodPUT">PUT</label>
+                      </div>
+                      <div class="form-check me-3">
+                        <input class="form-check-input" type="checkbox" id="methodDELETE" name="http_method" value="DELETE">
+                        <label class="form-check-label" for="methodDELETE">DELETE</label>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Браузер -->
+                  <div class="mb-3">
+                    <label for="browser" class="form-label">Браузер:</label>
+                    <select id="browser" name="browser" class="form-select">
+                      <option value="" selected>— любой —</option>
+                      <option value="Firefox">Firefox</option>
+                      <option value="Firefox Mobile">Firefox Mobile</option>
+                      <option value="Chrome">Chrome</option>
+                      <option value="Chrome Mobile">Chrome Mobile</option>
+                      <option value="Safari">Safari</option>
+                      <option value="Mobile Safari">Mobile Safari</option>
+                      <option value="Edge">Edge</option>
+                      <option value="Edge Mobile">Edge Mobile</option>
+                      <option value="Opera">Opera</option>
+                      <option value="Opera Mobile">Opera Mobile</option>
+                    </select>
+                  </div>
+
+                  <!-- Операционная система -->
+                  <div class="mb-3">
+                    <label for="os" class="form-label">ОС:</label>
+                    <select id="os" name="os" class="form-select">
+                      <option value="" selected>— любая —</option>
+                      <option value="Windows">Windows</option>
+                      <option value="Mac OS X">macOS</option>
+                      <option value="Linux">Linux</option>
+                      <option value="Android">Android</option>
+                      <option value="iOS">iOS</option>
+                    </select>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary w-100">Применить фильтры</button>
+                </form>
+              </div>
+            </div>
+
+            <!-- Карточки статистики -->
+            <div class="row mb-4">
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                Общее количество посещений
+                            </h5>
+                            <p class="card-text display-6">
+                                {{ total_requests }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Размер базы данных</h5>
+                            <p class="card-text display-6">
+                                {{ total_unique_users }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <div class="card bg-danger text-white">
+                        <div class="card-body">
+                            <h5 class="card-title">Ошибки</h5>
+                            <p class="card-text display-6">
+                                {{ total_errors }}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- График трафика -->
+            <div class="card chart-card mb-4">
+                <div class="card-header">Обзор трафика</div>
+                <div class="card-body">
+                    <canvas id="trafficChart" width="800" height="400"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Подключаем Bootstrap JS и Chart.js -->
+        <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+        <script>
+            // Пример данных для графика трафика (динамические данные можно передавать через контекст)
+            const ctx = document.getElementById('trafficChart').getContext('2d');
+            const trafficChart = new Chart(ctx, {
+              type: 'line',
+              data: {
+                labels:
+                  Array.from(Array({{ stats_size }}).keys(), (_, i) => i.toString()),
+                datasets: [{
+                  label: 'Посещения',
+                  data: {{ month_stats }},
+                  backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                  borderColor: 'rgba(54, 162, 235, 1)',
+                  borderWidth: 2,
+                  tension: 0.4
+                }]
+              },
+              options: {
+                responsive: true,
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }
+            });
+        </script>
+    </body>
+</html>

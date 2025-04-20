@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Дашборд - Ростелеком</title>
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Пользовательские стили -->
+  <style>
+    body {
+      overflow-x: hidden;
+      background-color: #f1f4f9;
+    }
+    /* Стили для бокового меню */
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100vh;
+      width: 260px;
+      background: #343a40;
+      color: #fff;
+      padding-top: 20px;
+      box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    }
+    .sidebar .brand {
+      font-size: 1.8rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      font-weight: bold;
+      color: #fff;
+    }
+    .sidebar .nav-link {
+      color: #adb5bd;
+      font-size: 1.1rem;
+      padding: 10px 20px;
+    }
+    .sidebar .nav-link:hover, .sidebar .nav-link.active {
+      color: #fff;
+      background-color: #495057;
+      border-radius: 4px;
+      text-decoration: none;
+    }
+    /* Основной контент */
+    .content {
+      margin-left: 260px;
+      padding: 20px;
+    }
+    /* Заголовок навбара */
+    .navbar-brand {
+      font-weight: bold;
+      font-size: 1.5rem;
+    }
+    /* Карточки статистики */
+    .card {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .card-body {
+      padding: 1.2rem;
+    }
+    .display-6 {
+      font-size: 2rem;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <!-- Боковая панель -->
+  <nav class="sidebar d-flex flex-column">
+    <div class="brand">Ростелеком</div>
+    <ul class="nav flex-column">
+      <li class="nav-item">
+        <a class="nav-link active" href="#">Дашборд</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Аналитика</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Отчёты</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Экспорт</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="#">Настройки</a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Основной контент -->
+  <div class="content">
+    <!-- Верхняя навигационная панель -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">Дашборд логов</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <form class="d-flex ms-auto">
+            <input class="form-control me-2" type="search" placeholder="Поиск" aria-label="Search">
+            <button class="btn btn-outline-success" type="submit">Поиск</button>
+          </form>
+        </div>
+      </div>
+    </nav>
+
+    <!-- Карточки статистики -->
+    <div class="row mb-4">
+      <div class="col-md-4 mb-3">
+        <div class="card bg-primary text-white">
+          <div class="card-body">
+            <h5 class="card-title">Общее количество посещений</h5>
+            <p class="card-text display-6">1,234</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card bg-success text-white">
+          <div class="card-body">
+            <h5 class="card-title">Уникальные пользователи</h5>
+            <p class="card-text display-6">567</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4 mb-3">
+        <div class="card bg-danger text-white">
+          <div class="card-body">
+            <h5 class="card-title">Ошибки</h5>
+            <p class="card-text display-6">23</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- График трафика -->
+    <div class="card mb-4">
+      <div class="card-header">
+        Обзор трафика
+      </div>
+      <div class="card-body">
+        <canvas id="trafficChart" width="800" height="400"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Подключаем Bootstrap JS и Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Пример данных для графика трафика
+    const ctx = document.getElementById('trafficChart').getContext('2d');
+    const trafficChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь'],
+        datasets: [{
+          label: 'Посещения',
+          data: [65, 59, 80, 81, 56, 55],
+          backgroundColor: 'rgba(75, 192, 192, 0.2)',
+          borderColor: 'rgba(75, 192, 192, 1)',
+          borderWidth: 2,
+          tension: 0.4
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          y: {
+            beginAtZero: true
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

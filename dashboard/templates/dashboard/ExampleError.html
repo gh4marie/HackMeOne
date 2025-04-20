@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Example Error chart</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .chart-container {
+            width: 40%;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="chart-container">
+        <h2>{{ chart_title }}</h2>
+        <canvas id="ErrorChartExample"></canvas>
+    </div>
+
+    <script>
+        const ctx = document.getElementById('ErrorChartExample').getContext('2d');
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: {{ labels| safe }},
+                datasets: [{
+                    label: 'amount',
+                    data: {{ data|safe }},
+                    backgroundColor: [
+                        'rgba(187, 168, 197, 0.2)',
+                        'rgba(104, 5, 242, 0.2)',
+                        'rgba(16, 24, 40, 0.2)',
+                        'rgba(242, 60, 19, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(156, 27, 191, 0.2)',
+                        'rgba(104, 5, 242, 0.2)',
+                        'rgba(16, 24, 40, 0.2)',
+                        'rgba(242, 60, 19, 0.2)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+            }
+        });
+    </script>
+</body>
+</html>
