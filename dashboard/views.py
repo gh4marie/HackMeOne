@@ -14,6 +14,8 @@ from logparser.management.commands.load_logs import process_log_file
 from logparser.models import FactLog  # Используем непосредственно FactLog для хранения логов
 from django.shortcuts import render, redirect
 from django.urls import reverse
+from django.db.models import Count
+from collections import defaultdict
 
 def index_panel(request):
     """
@@ -65,19 +67,37 @@ def index_panel(request):
 
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
-        if int((end_date - start_date).days) > 365:
-            return HttpResponse("Too many days")
+        # if int((end_date - start_date).days) > 365:
+        #     return HttpResponse("Too many days")
 
+        print("Point 1")
+        all_objects = FactLog.objects.filter(
+                        *([Q(status_code__in=status_values)] if status_values else []),
+                        *([Q(request__method__in=method_values)] if method_values else []),
+                        *([Q(user_agent_detail__os_family__in=os_values)] if os_values else []),
+                        *([Q(user_agent_detail__browser_family__in=browser_values)] if browser_values else [])
+                    )
+        print("Point 2")
+
+        # Get all date counts in a single query
+        date_counts = (
+            all_objects
+            .values('datetime_entry__log_date')
+            .annotate(count=Count('id'))
+        )
+
+        # Create a dictionary mapping dates to counts
+        date_count_dict = defaultdict(int)
+        for item in date_counts:
+            date_count_dict[item['datetime_entry__log_date']] = item['count']
+
+        # Build the month_stats list using our in-memory dictionary
         month_stats = [
-            FactLog.objects.filter(
-                datetime_entry__log_date=single_date,
-                *([Q(status_code__in=status_values)] if status_values else []),
-                *([Q(request__method__in=method_values)] if method_values else []),
-                *([Q(user_agent_detail__os_family__in=os_values)] if os_values else []),
-                *([Q(user_agent_detail__browser_family__in=browser_values)] if browser_values else [])
-            ).count()
+            date_count_dict[single_date]
             for single_date in daterange(start_date, end_date)
         ]
+        print("Point 3")
+
     else:
         month_stats = [
             FactLog.objects.filter(datetime_entry__log_date__day=day).count()

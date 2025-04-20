@@ -11,6 +11,9 @@ Users/macbook.maria/Downloads/HackMe-16.04.25 2/db-3.sqlite3
 /Users/macbook.maria/Downloads/HackMe-16.04.25 2/db-3.sqlite3
 /Users/macbook.maria/Downloads/HackMe-16.04.25 2/db-2.sqlite3
 
+# Исключаем папки migrations
+**/migrations/
+
 # Исключаем .DS_Store файлы
 **/.DS_Store
 **/.DS_Store/

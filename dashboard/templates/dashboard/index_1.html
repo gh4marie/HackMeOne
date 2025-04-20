@@ -375,5 +375,40 @@
               }
             });
         </script>
+        <script>
+            // Fill form fields from URL parameters when page loads
+            document.addEventListener('DOMContentLoaded', function() {
+                // Parse URL parameters
+                const urlParams = new URLSearchParams(window.location.search);
+
+                // Fill date fields
+                if(urlParams.has('start_date')) {
+                    document.getElementById('start_date').value = urlParams.get('start_date');
+                }
+                if(urlParams.has('end_date')) {
+                    document.getElementById('end_date').value = urlParams.get('end_date');
+                }
+
+                // Fill status checkboxes (can have multiple values)
+                urlParams.getAll('status').forEach(value => {
+                    const checkbox = document.getElementById('status' + value);
+                    if(checkbox) checkbox.checked = true;
+                });
+
+                // Fill HTTP method checkboxes (can have multiple values)
+                urlParams.getAll('http_method').forEach(value => {
+                    const checkbox = document.getElementById('method' + value);
+                    if(checkbox) checkbox.checked = true;
+                });
+
+                // Fill dropdowns
+                if(urlParams.has('browser')) {
+                    document.getElementById('browser').value = urlParams.get('browser');
+                }
+                if(urlParams.has('os')) {
+                    document.getElementById('os').value = urlParams.get('os');
+                }
+            });
+        </script>
     </body>
 </html>

@@ -41,8 +41,10 @@ urlpatterns = [
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.shortcuts import redirect
 
 urlpatterns = [
+    path('', lambda request: redirect('/dashboard/panel')),
     path('admin/', admin.site.urls),
 #    path('logparser/', include('logparser.'),
     path('dashboard/', include('dashboard.urls')),
