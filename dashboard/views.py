@@ -16,6 +16,28 @@ from django.shortcuts import render, redirect
 from django.urls import reverse
 from django.db.models import Count
 from collections import defaultdict
+from django.conf import settings
+import os
+
+def human_readable_size(num_bytes):
+    """Переводит байты в удобочитаемый формат."""
+    for unit in ('Б', 'КБ', 'МБ', 'ГБ', 'ТБ'):
+        if num_bytes < 1024:
+            return f"{num_bytes:.1f} {unit}"
+        num_bytes /= 1024
+    return f"{num_bytes:.1f} ПБ"
+
+
+def get_sqlite_db_size():
+    """Возвращает размер файла SQLite БД в байтах."""
+    db_path = settings.DATABASES['default']['NAME']
+    # если путь относительный, приведём его к абсолютному
+    if not os.path.isabs(db_path):
+        db_path = os.path.join(settings.BASE_DIR, db_path)
+    try:
+        return os.path.getsize(db_path)
+    except OSError:
+        return 0
 
 def index_panel(request):
     """
@@ -111,12 +133,17 @@ def index_panel(request):
     print("Counting unique users")
     total_unique_users = 0  # Здесь можно реализовать подсчёт уникальных пользователей
 
+    # Получаем размер базы данных
+    size_bytes = get_sqlite_db_size()
+    db_size = human_readable_size(size_bytes)
+
     context = {
         "month_stats": "[" + ", ".join(map(str, month_stats)) + "]",
         'stats_size': len(month_stats),
         "total_requests": "{:,}".format(total_requests),
         "total_errors": "{:,}".format(total_errors),
         "total_unique_users": "{:,}".format(total_unique_users),
+        "db_size": db_size,
     }
     return render(request, 'dashboard/index_1.html', context)
 

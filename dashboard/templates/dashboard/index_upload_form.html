@@ -34,12 +34,16 @@
         .btn-orange:hover {
             background-color: #e65c00;
         }
+        .timer {
+            margin-top: 15px;
+            font-size: 1rem;
+        }
     </style>
 </head>
 <body>
     <div class="form-container">
         <h2 class="mb-4">Загрузка логов</h2>
-        <form method="post" enctype="multipart/form-data">
+        <form id="uploadForm" method="post" enctype="multipart/form-data" action="{% url 'upload-log' %}">
             {% csrf_token %}
             <div class="mb-3">
                 <label for="log_file" class="form-label">Выберите лог-файл</label>
@@ -47,6 +51,85 @@
             </div>
             <button type="submit" class="btn btn-orange">Загрузить</button>
         </form>
+
+        <!-- Прогресс загрузки файла по сети -->
+        <div class="progress mt-3" id="progressWrapper" style="height: 25px; display: none;">
+            <div id="uploadProgress" class="progress-bar" role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100">0%</div>
+        </div>
+
+        <!-- Таймер обработки на сервере -->
+        <div id="processingContainer" class="timer" style="display: none;">
+            Обработка в БД: <span id="processingTime">0</span> сек.
+        </div>
     </div>
+
+    <script>
+        (function() {
+            const form = document.getElementById('uploadForm');
+            const progressWrapper = document.getElementById('progressWrapper');
+            const progressBar = document.getElementById('uploadProgress');
+            const processingContainer = document.getElementById('processingContainer');
+            const processingTimeElem = document.getElementById('processingTime');
+            let processingStartTime;
+            let processingTimerInterval;
+
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', form.action);
+
+                // Устанавливаем CSRF-токен
+                const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+                xhr.setRequestHeader('X-CSRFToken', csrfToken);
+
+                // Показать прогресс-бар при старте передачи
+                xhr.upload.addEventListener('loadstart', function() {
+                    progressWrapper.style.display = 'block';
+                });
+
+                // Обновление прогресса передачи
+                xhr.upload.addEventListener('progress', function(e) {
+                    if (e.lengthComputable) {
+                        const percent = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percent + '%';
+                        progressBar.textContent = percent + '%';
+                    }
+                });
+
+                // После завершения передачи файла, до обработки
+                xhr.upload.addEventListener('loadend', function() {
+                    progressWrapper.style.display = 'none';
+                    processingContainer.style.display = 'block';
+                    processingStartTime = Date.now();
+                    processingTimerInterval = setInterval(function() {
+                        const elapsed = Math.floor((Date.now() - processingStartTime) / 1000);
+                        processingTimeElem.textContent = elapsed;
+                    }, 1000);
+                });
+
+                // Когда сервер полностью ответил (обработка завершена)
+                xhr.addEventListener('load', function() {
+                    clearInterval(processingTimerInterval);
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        // Редирект после полной обработки
+                        window.location.href = "{% url 'panel' %}";
+                    } else {
+                        alert('Ошибка загрузки: ' + xhr.statusText);
+                        processingContainer.style.display = 'none';
+                    }
+                });
+
+                // Сетевая ошибка
+                xhr.addEventListener('error', function() {
+                    clearInterval(processingTimerInterval);
+                    alert('Сетевая ошибка при загрузке.');
+                    processingContainer.style.display = 'none';
+                });
+
+                xhr.send(new FormData(form));
+            });
+        })();
+    </script>
 </body>
 </html>
