@@ -18,6 +18,13 @@ from django.db.models import Count
 from collections import defaultdict
 from django.conf import settings
 import os
+from datetime import date, timedelta, datetime
+import csv
+
+def daterange(start_date: date, end_date: date):
+    days = int((end_date - start_date).days)
+    for n in range(days):
+        yield start_date + timedelta(n)
 
 def human_readable_size(num_bytes):
     """Переводит байты в удобочитаемый формат."""
@@ -39,12 +46,7 @@ def get_sqlite_db_size():
     except OSError:
         return 0
 
-def index_panel(request):
-    """
-    Основной обработчик дашборда. Формирует статистику логов и передаёт данные в шаблон.
-    """
-    print("Creating day stats")
-
+def filter_logs(request):
     start_date_str = request.GET.get('start_date', None)
     end_date_str = request.GET.get('end_date', None)
 
@@ -80,30 +82,51 @@ def index_panel(request):
 
     # Фильтрация по дню через связь с моделью DimDateTime (поле log_date)
     if start_date_str and end_date_str:
-        from datetime import date, timedelta, datetime
-
-        def daterange(start_date: date, end_date: date):
-            days = int((end_date - start_date).days)
-            for n in range(days):
-                yield start_date + timedelta(n)
 
         start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
         end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
         # if int((end_date - start_date).days) > 365:
         #     return HttpResponse("Too many days")
 
-        print("Point 1")
         all_objects = FactLog.objects.filter(
                         *([Q(status_code__in=status_values)] if status_values else []),
                         *([Q(request__method__in=method_values)] if method_values else []),
                         *([Q(user_agent_detail__os_family__in=os_values)] if os_values else []),
-                        *([Q(user_agent_detail__browser_family__in=browser_values)] if browser_values else [])
+                        *([Q(user_agent_detail__browser_family__in=browser_values)] if browser_values else []),
+                        datetime_entry__log_date__range=(start_date, end_date)
                     )
-        print("Point 2")
+        return all_objects
+    else:
+        return None
+
+def index_panel(request):
+    """
+    Основной обработчик дашборда. Формирует статистику логов и передаёт данные в шаблон.
+    """
+    print("Creating day stats")
+
+    start_date_str = request.GET.get('start_date', None)
+    end_date_str = request.GET.get('end_date', None)
+    filtered_objects = filter_logs(request)
+    errors1 = []
+    errors2 = []
+    errors3 = []
+    errors4 = []
+    errors5 = []
+    date_labels = []
+    if filtered_objects != None:
+        start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        errors1 = [ FactLog.objects.filter(Q(datetime_entry__day=day.day) & Q(datetime_entry__month=day.month) & Q(datetime_entry__year=day.year) & Q(status_code__range=[100, 199])).count() for day in daterange(start_date, end_date) ]
+        errors2 = [ FactLog.objects.filter(Q(datetime_entry__day=day.day) & Q(datetime_entry__month=day.month) & Q(datetime_entry__year=day.year) & Q(status_code__range=[200, 299])).count() for day in daterange(start_date, end_date) ]
+        errors3 = [ FactLog.objects.filter(Q(datetime_entry__day=day.day) & Q(datetime_entry__month=day.month) & Q(datetime_entry__year=day.year) & Q(status_code__range=[300, 399])).count() for day in daterange(start_date, end_date) ]
+        errors4 = [ FactLog.objects.filter(Q(datetime_entry__day=day.day) & Q(datetime_entry__month=day.month) & Q(datetime_entry__year=day.year) & Q(status_code__range=[400, 499])).count() for day in daterange(start_date, end_date) ]
+        errors5 = [ FactLog.objects.filter(Q(datetime_entry__day=day.day) & Q(datetime_entry__month=day.month) & Q(datetime_entry__year=day.year) & Q(status_code__range=[500, 599])).count() for day in daterange(start_date, end_date) ]
+        date_labels = [day.strftime("%Y-%m-%d") for day in daterange(start_date, end_date)]
 
         # Get all date counts in a single query
         date_counts = (
-            all_objects
+            filtered_objects
             .values('datetime_entry__log_date')
             .annotate(count=Count('id'))
         )
@@ -118,13 +141,9 @@ def index_panel(request):
             date_count_dict[single_date]
             for single_date in daterange(start_date, end_date)
         ]
-        print("Point 3")
-
     else:
-        month_stats = [
-            FactLog.objects.filter(datetime_entry__log_date__day=day).count()
-            for day in range(1, 2)
-        ]
+        month_stats = []
+
     print("Counting requests")
     total_requests = FactLog.objects.count()
 
@@ -145,7 +164,48 @@ def index_panel(request):
         "total_unique_users": "{:,}".format(total_unique_users),
         "db_size": db_size,
     }
+
+
+    context.update({
+        'errors1': errors1,
+        'errors2': errors2,
+        'errors3': errors3,
+        'errors4': errors4,
+        'errors5': errors5,
+        'date_labels' : date_labels,
+    })
+
     return render(request, 'dashboard/index_1.html', context)
+
+def request_export(request):
+    print("Exporting data...")
+    filtered_objects = filter_logs(request)
+    if filtered_objects == None:
+        return HttpResponse("Error: failed to apply filters")
+    opts = filtered_objects.model._meta
+    model = filtered_objects.model
+    response = HttpResponse(content_type='text/csv')
+    # force download.
+    response['Content-Disposition'] = 'attachment;filename=export.csv'
+    # the csv writer
+    writer = csv.writer(response)
+
+    print("Preparing CSV")
+    field_names = [field.name for field in opts.fields]
+
+    # Write a first row with header information
+    writer.writerow(field_names)
+    # Write data rows
+    i = 0
+    size = len(filtered_objects)
+    if size > 100000:
+        return HttpResponse("Error: too many records")
+    for obj in filtered_objects:
+        if i % 1000 == 0:
+            print(f"Writing data {i}/{size}")
+        writer.writerow([getattr(obj, field) for field in field_names])
+        i += 1
+    return response
 
 def index_upload_log(request):
     """
@@ -161,7 +221,7 @@ def index_upload_log(request):
                     tmp_file.write(chunk)
                 tmp_file_path = tmp_file.name
             process_log_file(tmp_file_path)
-            return redirect(reverse('dashboard'))  # редирект на главную страницу дашборда
+            return redirect(reverse('panel'))  # редирект на главную страницу дашборда
              #   return render(request, 'upload_logs.html')
         else:
             return HttpResponse(b"Error")

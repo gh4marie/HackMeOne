@@ -154,7 +154,7 @@
                     >
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">Экспорт</a>
+                    <a class="nav-link" id="exportLink" href="/dashboard/export">Экспорт</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="/dashboard/upload-log"
@@ -343,6 +343,14 @@
                     <canvas id="trafficChart" width="800" height="400"></canvas>
                 </div>
             </div>
+
+            <!-- График2 -->
+            <div class="card chart-card mb-4">
+                <div class="card-header">Обзор html response</div>
+                <div class="card-body">
+                    <canvas id="errors1Chart" width="800" height="400"></canvas>
+            </div>
+
         </div>
 
 
@@ -354,8 +362,8 @@
             const trafficChart = new Chart(ctx, {
               type: 'line',
               data: {
-                labels:
-                  Array.from(Array({{ stats_size }}).keys(), (_, i) => i.toString()),
+                labels: [{% for date in date_labels %}"{{ date }}",{% endfor %}],
+
                 datasets: [{
                   label: 'Посещения',
                   data: {{ month_stats }},
@@ -410,5 +418,59 @@
                 }
             });
         </script>
+
+        <script>
+            // Пример данных для графика
+            const ctx1 = document.getElementById('errors1Chart').getContext('2d');
+            const errors1Chart = new Chart(ctx1, {
+            type: 'bar',
+            data: {
+                //labels: ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь'],
+                labels: [{% for date in date_labels %}"{{ date }}",{% endfor %}],
+                datasets: [
+                {
+                    label: '1xx informational responses',
+                    data: {{ errors1 }},
+                    backgroundColor: 'rgba(161, 130, 76, 0.7)',
+                },
+                {
+                    label: '2xx succesful responses',
+                    data: {{ errors2 }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                },
+                {
+                    label: '3xx redirection messages',
+                    data: {{ errors3 }},
+                    backgroundColor: 'rgba(255, 206, 86, 0.7)',
+                },
+                {
+                    label: '4xx client error responses',
+                    data: {{ errors4 }},
+                    backgroundColor: 'rgba(200, 100, 100, 0.7)',
+                },
+                {
+                    label: '5xx server error responses',
+                    data: {{ errors5 }},
+                    backgroundColor: 'rgba(100, 200, 100, 0.7)',
+                },
+                ]
+            },
+            options: {
+                scales: {
+                y: {
+                    stacked: true
+                },
+                x: {
+                    stacked: true,
+                    ticks: {
+                        maxRotation: 45,
+                        minRotation: 45
+                    }
+                }
+                }
+            }
+            });
+        </script>
+
     </body>
 </html>
